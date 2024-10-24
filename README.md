@@ -1,3 +1,36 @@
+# Text to Speech for Vietnamese with python 3.10
+Here is the XPhoneBERT model that has been modified to be compatible with the latest Python and PyTorch versions.
+
+## Installation:
+
+My test environment: `Python==3.10`
+
+## Installation steps:
+
+```
+git clone https://github.com/manhcuong02/VITs_XPhoneBERT_For_Vietnamese.git
+cd VITs_XPhoneBERT_For_Vietnamese
+pip install -r requirements.txt
+```
+
+## My Experiments
+My experiments were conducted on the [`infore1_25h`](https://huggingface.co/datasets/doof-ferb/infore1_25hours) dataset with 2 x 4090 GPUs, a batch size of 20, and 1600 epochs (approximately 70k steps). It took about 15 hours to train the model.
+
+## Demo results:
+
+
+# Cite:
+```
+@inproceedings{xphonebert,
+title     = {{XPhoneBERT: A Pre-trained Multilingual Model for Phoneme Representations for Text-to-Speech}},
+author    = {Linh The Nguyen and Thinh Pham and Dat Quoc Nguyen},
+booktitle = {Proceedings of the 24th Annual Conference of the International Speech Communication Association (INTERSPEECH)},
+year      = {2023}
+}
+```
+
+# Author's instructions:
+
 ## <a name="introduction"></a> VITS extended with our XPhoneBERT encoder
 
 We provide a procedure to help you train the strong text-to-speech baseline [VITS](https://github.com/jaywalnut310/vits) with our XPhoneBERT encoder on [the LJSpeech dataset](https://keithito.com/LJ-Speech-Dataset/) or your own dataset.
@@ -74,3 +107,4 @@ In our settings, we use 4 A100 GPUs (40GB each) for training. If users have a sm
 ### <a name="infer"></a> Inference Example
 See [inference.py](inference.py) file and justify corresponding paths in [inference.py](inference.py).
 
+# 
