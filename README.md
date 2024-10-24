@@ -19,7 +19,7 @@ My experiments were conducted on the [`infore1_25h`](https://huggingface.co/data
 ## Demo results:
 
 
-# Cite:
+## Cite:
 ```
 @inproceedings{xphonebert,
 title     = {{XPhoneBERT: A Pre-trained Multilingual Model for Phoneme Representations for Text-to-Speech}},
@@ -37,7 +37,7 @@ We provide a procedure to help you train the strong text-to-speech baseline [VIT
 
 ### <a name="pre-require"></a> Pre-requisites
 
-- Python >= 3.6
+- `Python >= 3.6` => `python >= 3.10"
 - Install python requirements. Please refer to [requirements.txt](requirements.txt): `
 pip install -r requirements.txt`
 
