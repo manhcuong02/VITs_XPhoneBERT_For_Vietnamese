@@ -1,7 +1,7 @@
 # Text to Speech for Vietnamese with python 3.10
 Here is the XPhoneBERT model that has been modified to be compatible with the latest Python and PyTorch versions.
 
-## Installation:
+## Environment:
 
 My test environment: `Python==3.10`
 
@@ -19,7 +19,7 @@ My experiments were conducted on the [`infore1_25h`](https://huggingface.co/data
 ## Demo results:
 
 
-## Cite:
+## Citation:
 ```
 @inproceedings{xphonebert,
 title     = {{XPhoneBERT: A Pre-trained Multilingual Model for Phoneme Representations for Text-to-Speech}},
