@@ -11,7 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 import torch.multiprocessing as mp
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.cuda.amp import autocast, GradScaler
+from torch.amp import autocast, GradScaler
 from transformers import AutoTokenizer, AutoModel
 
 import commons
@@ -65,8 +65,9 @@ def run(rank, n_gpus, hps):
 
     tokenizer = AutoTokenizer.from_pretrained(hps.bert)
     # bert = AutoModel.from_pretrained(hps.bert)
-
+    
     train_dataset = TextAudioLoader(hps.data.training_files, hps.data, tokenizer)
+        
     train_sampler = DistributedBucketSampler(
         train_dataset,
         hps.train.batch_size,
@@ -74,6 +75,7 @@ def run(rank, n_gpus, hps):
         num_replicas=n_gpus,
         rank=rank,
         shuffle=True)
+    
     collate_fn = TextAudioCollate(pad_token_id=tokenizer.pad_token_id)
     train_loader = DataLoader(train_dataset, num_workers=4, shuffle=False, pin_memory=True,
                               collate_fn=collate_fn, batch_sampler=train_sampler)
@@ -108,6 +110,8 @@ def run(rank, n_gpus, hps):
         _, _, _, epoch_str = utils.load_checkpoint(utils.latest_checkpoint_path(hps.model_dir, "D_*.pth"), net_d,
                                                    optim_d)
         global_step = (epoch_str - 1) * len(train_loader)
+        # optim_g.param_groups[0]['lr'] = 1e-4
+        # optim_d.param_groups[0]['lr'] = 1e-4
     except:
         epoch_str = 1
         global_step = 0
@@ -118,7 +122,7 @@ def run(rank, n_gpus, hps):
     scaler = GradScaler(enabled=hps.train.fp16_run)
 
     for epoch in range(epoch_str, hps.train.epochs + 1):
-        if epoch < int(hps.train.epochs / 4):
+        if epoch < 200:
             for child in net_g.module.enc_p.bert.children():
                 for param in child.parameters():
                     param.requires_grad = False
@@ -135,6 +139,7 @@ def run(rank, n_gpus, hps):
         scheduler_g.step()
         scheduler_d.step()
 
+    dist.destroy_process_group()    
 
 def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loaders, logger, writers):
     net_g, net_d = nets
@@ -156,7 +161,7 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
         spec, spec_lengths = spec.cuda(rank, non_blocking=True), spec_lengths.cuda(rank, non_blocking=True)
         y, y_lengths = y.cuda(rank, non_blocking=True), y_lengths.cuda(rank, non_blocking=True)
 
-        with autocast(enabled=hps.train.fp16_run):
+        with autocast(device_type="cuda", enabled=hps.train.fp16_run):
             y_hat, l_length, attn, ids_slice, x_mask, z_mask, \
                 (z, z_p, m_p, logs_p, m_q, logs_q) = net_g(x, attention_mask, spec, spec_lengths)
 
@@ -183,7 +188,7 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
 
             # Discriminator
             y_d_hat_r, y_d_hat_g, _, _ = net_d(y, y_hat.detach())
-            with autocast(enabled=False):
+            with autocast(device_type="cuda", enabled=False):
                 loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(y_d_hat_r, y_d_hat_g)
                 loss_disc_all = loss_disc
         optim_d.zero_grad()
@@ -192,10 +197,10 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
         grad_norm_d = commons.clip_grad_value_(net_d.parameters(), None)
         scaler.step(optim_d)
 
-        with autocast(enabled=hps.train.fp16_run):
+        with autocast(device_type="cuda", enabled=hps.train.fp16_run):
             # Generator
             y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = net_d(y, y_hat)
-            with autocast(enabled=False):
+            with autocast(device_type="cuda", enabled=False):
                 loss_dur = torch.sum(l_length.float())
                 loss_mel = F.l1_loss(y_mel, y_hat_mel) * hps.train.c_mel
                 loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * hps.train.c_kl
@@ -218,7 +223,7 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
                     epoch,
                     100. * batch_idx / len(train_loader)))
                 logger.info([x.item() for x in losses] + [global_step, lr])
-
+              
                 scalar_dict = {"loss/g/total": loss_gen_all, "loss/d/total": loss_disc_all, "learning_rate": lr,
                                "grad_norm_d": grad_norm_d, "grad_norm_g": grad_norm_g}
                 scalar_dict.update(
@@ -309,3 +314,5 @@ def evaluate(hps, generator, eval_loader, writer_eval):
 
 if __name__ == "__main__":
     main()
+    if dist.is_initialized():
+        dist.destroy_process_group()

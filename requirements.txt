@@ -13,26 +13,3 @@ py_vncorenlp==0.1.4
 vinorm==2.0.7
 pandas 
 pyarrow
-
-transformers
-tqdm
-segments
-
-
-
-# numpy==1.23.5
-# librosa==0.9.1
-# torch==1.13.0
-# torchvision==0.14.0
-
-# Cython==0.29.21
-# librosa==0.8.0
-# matplotlib==3.3.1
-# numpy==1.18.5
-# scipy==1.5.2
-# tensorboard==2.3.0
-# torch @ https://download.pytorch.org/whl/cu101/torch-1.6.0%2Bcu101-cp36-cp36m-linux_x86_64.whl
-# torchvision @ https://download.pytorch.org/whl/cu101/torchvision-0.7.0%2Bcu101-cp36-cp36m-linux_x86_64.whl
-# Unidecode==1.1.1
-# text2phonemesequence
-# phonemizer==2.2.1
